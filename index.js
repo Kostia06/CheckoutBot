@@ -1,6 +1,6 @@
 import { BrowserBot } from "./BrowserBot.js";
 import { waitUntil } from "./Timer.js"
-import {user, password} from "./password.js"
+import {user, name, password} from "./password.js"
 
 // for the formating reasons
 const months = [
@@ -8,9 +8,11 @@ const months = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-const eventName = "Casual Tennis";
+const eventName = "Friday Tennis";
 const firstDateOfInterest = new Date("Aug 9, 2024");
-const firstRegistretion = new Date("Aug 6, 2024 16:05:00");
+const firstRegistretion = new Date("Aug 7, 2024 8:15:00");
+const linkOfInterest1 = "https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=4";
+const linkOfInterest = "https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=16";
 
 
 const main = async() => {
@@ -25,6 +27,8 @@ const main = async() => {
         await login(bb);
         // goes to the page
         await gotoPage(bb);
+        // changes the reservation
+        await changeReservation(bb);
         await waitUntil(waitingDate, "to book");
         // books the event
         await book(bb, lookingFor);
@@ -38,7 +42,7 @@ const main = async() => {
 
 const login = async(bb) => {
    console.log("Logging in");
-    await bb.gotoPage("https://anc.apm.activecommunities.com/santamonicarecreation/signin?onlineSiteId=0&from_original_cui=true&override_partial_error=False&custom_amount=False&params=aHR0cHM6Ly9hcG0uYWN0aXZlY29tbXVuaXRpZXMuY29tL3NhbnRhbW9uaWNhcmVjcmVhdGlvbi9BY3RpdmVOZXRfSG9tZT9GaWxlTmFtZT1hY2NvdW50b3B0aW9ucy5zZGkmZnJvbUxvZ2luUGFnZT10cnVl");
+    await bb.gotoPage("https://anc.apm.activecommunities.com/santamonicarecreation/signin");
     await bb.setInput("input", "aria-label='Login name Required'", user);
     await bb.delay();
     await bb.setInput("input", "aria-label='Password Required'", password);
@@ -48,12 +52,18 @@ const login = async(bb) => {
 
 const gotoPage = async(bb) => {
     console.log("Going to page");        
-    await bb.gotoPage("https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=4");
+    await bb.gotoPage(linkOfInterest);
     await bb.delay();
     await bb.setInput("input", "aria-label='Event name'", eventName);
     await bb.delay();
 }
 
+const changeReservation = async(bb) => {
+    console.log("Changing reservation");
+    await bb.clickButton("div", "class='dropdown dropdown--ng dropdown--m dropdown--filter filter-dropdown is-active customer-company'");
+    await bb.delay();
+    await bb.clickButton("li", `title='${name}'`);
+}
 
 const book = async(bb, lookingFor) => {
     const dateFormat = months[lookingFor.getMonth()] + " " + lookingFor.getDate() + ", " + lookingFor.getFullYear()
@@ -77,13 +87,14 @@ const bookOnDate = async(bb, date) => {
     while(i != -1){
         let j = 0;
         while(true){
-            const available = await bb.getAttribute("div", `aria-activedescendant='cell-${i}-${j}'`, "aria-label");
-            if(!available){
+            const availablity = await bb.getAttribute("div", `aria-activedescendant='cell-${i}-${j}'`, "aria-label");
+            if(!availablity){
                 if(j == 0){ i = -2;}
                 break;
             }
-            if(available.includes("Avaiable")){
-                console.log("Found an open slot on "+date+" at "+ available);
+            console.log("Checking "+date+" at "+ availablity);
+            if(availablity.includes("Available")){
+                await bb.clickButton("div", `aria-label='${availablity}'`);
                 await bb.clickButton("button", "type='submit'");
                 return true;
             }

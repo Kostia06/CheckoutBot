@@ -1,10 +1,5 @@
 all: index.js
 	@echo "make run"
-	@node index.js
+	@node index.js --inspect
 	@echo "make run done"
-
-test: test.js
-	@echo "make test"
-	@node test.js
-	@echo "make test done"
 
