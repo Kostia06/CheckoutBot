@@ -6,10 +6,12 @@ const delay = () =>{
     );
 }
 
-const waitUntil = async(date, message) =>{ 
+const waitUntil = async(date, message, minuteOffset = 0) =>{ 
     let currentTime = new Date();
-    console.log("Waiting for " + message + " at " + date);
-    while(currentTime < date){
+    let waitTime = new Date(date);
+    waitTime.setMinutes(waitTime.getMinutes() - minuteOffset);
+    console.log("Waiting for " + message + " at " + waitTime);
+    while(currentTime < waitTime){
         await delay();
         currentTime = new Date();
     }

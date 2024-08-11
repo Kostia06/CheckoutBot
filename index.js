@@ -1,6 +1,18 @@
+#!/usr/bin/env node
+
 import { BrowserBot } from "./BrowserBot.js";
 import { waitUntil } from "./Timer.js"
 import {user, name, password} from "./password.js"
+import readline from 'readline';
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+const ask = async(query) => {
+    return new Promise(resolve => rl.question(query, resolve));
+}
 
 // for the formating reasons
 const months = [
@@ -8,39 +20,57 @@ const months = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
+const daysOfWeek = [
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+];
+
 const eventName = "Friday Tennis";
-const firstDateOfInterest = new Date("Aug 9, 2024");
-const firstRegistretion = new Date("Aug 7, 2024 8:15:00");
+const day1 = new Date();
+const day2 = new Date();
 const linkOfInterest1 = "https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=4";
 const linkOfInterest = "https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=16";
 
-
-const main = async() => {
-    let bb = new BrowserBot(); 
-    let waitingDate = firstRegistretion;
-    let lookingFor = firstDateOfInterest;
-    while(true){
-        await waitUntil(waitingDate, "to login");
-        // creates a new browser instance
-        await bb.initBrowser();
-        // logs in
-        await login(bb);
-        // goes to the page
-        await gotoPage(bb);
-        // changes the reservation
-        await changeReservation(bb);
-        await waitUntil(waitingDate, "to book");
-        // books the event
-        await book(bb, lookingFor);
-        // waits for next week
-        waitingDate.setDate(waitingDate.getDate() + 7);
-        lookingFor.setDate(lookingFor.getDate() + 7);
-        // closes the browser
-        await bb.closeBrowser();
-    }
+async function setUp(){
+    console.log("Enter the date of the registration");
+    const month1 = await ask("\tEnter the month (EX: Aug): ");
+    const date1 = await ask("\tEnter the day (EX: 31): ");
+    const hour1 = await ask("\tEnter the hour (EX: 13): ");
+    const minute1 = await ask("\tEnter the minute (EX: 30): ");
+    day1.setMonth(months.indexOf(month1));
+    day1.setDate(date1);
+    day1.setHours(hour1);
+    day1.setMinutes(minute1);
+    day1.setSeconds(0)
+    console.log("Enter the date that you want to book on");
+    const month2 = await ask("\tEnter the month (EX: Aug): ");
+    const date2 = await ask("\tEnter the day (EX: 31): ");
+    day2.setMonth(months.indexOf(month2));
+    day2.setDate(date2);
 }
 
-const login = async(bb) => {
+async function main(){
+    await setUp();
+    let bb = new BrowserBot(); 
+    let waitingDate = day1;
+    let lookingFor = day2;
+
+    await waitUntil(waitingDate, "to login", 2);
+    // creates a new browser instance
+    await bb.initBrowser();
+    // logs in
+    await login(bb);
+    // goes to the page
+    await gotoPage(bb);
+    // changes the reservation
+    await changeReservation(bb);
+    await waitUntil(waitingDate, "to book");
+    // books the event
+    await book(bb, lookingFor);
+    // closes the browser
+    await bb.closeBrowser();
+}
+
+async function login(bb){
    console.log("Logging in");
     await bb.gotoPage("https://anc.apm.activecommunities.com/santamonicarecreation/signin");
     await bb.setInput("input", "aria-label='Login name Required'", user);
@@ -50,7 +80,7 @@ const login = async(bb) => {
     await bb.clickButton("button", "type='submit'");
 }
 
-const gotoPage = async(bb) => {
+async function gotoPage(bb){
     console.log("Going to page");        
     await bb.gotoPage(linkOfInterest);
     await bb.delay();
@@ -58,14 +88,14 @@ const gotoPage = async(bb) => {
     await bb.delay();
 }
 
-const changeReservation = async(bb) => {
+async function changeReservation(bb){
     console.log("Changing reservation");
     await bb.clickButton("div", "class='dropdown dropdown--ng dropdown--m dropdown--filter filter-dropdown is-active customer-company'");
     await bb.delay();
     await bb.clickButton("li", `title='${name}'`);
 }
 
-const book = async(bb, lookingFor) => {
+async function book(bb, lookingFor){
     const dateFormat = months[lookingFor.getMonth()] + " " + lookingFor.getDate() + ", " + lookingFor.getFullYear()
     console.log("Booking for "+ dateFormat);
     await bb.clickButton("div", "class='an-input-addon'"); 
@@ -82,19 +112,20 @@ const book = async(bb, lookingFor) => {
 
 }
 
-const bookOnDate = async(bb, date) => {
+async function bookOnDate(bb, date){
     let i = 0;
     while(i != -1){
         let j = 0;
         while(true){
-            const availablity = await bb.getAttribute("div", `aria-activedescendant='cell-${i}-${j}'`, "aria-label");
-            if(!availablity){
+            const availability = await bb.getAttribute("div", `aria-activedescendant='cell-${i}-${j}'`, "aria-label");
+            if(!availability){
                 if(j == 0){ i = -2;}
                 break;
             }
-            console.log("Checking "+date+" at "+ availablity);
-            if(availablity.includes("Available")){
-                await bb.clickButton("div", `aria-label='${availablity}'`);
+            console.log("Checking "+date+" at "+ availability);
+            if(availability.includes("Available")){
+                console.log("Found availability at " + availability);
+                await bb.clickButton("div", `aria-label='${availability}'`);
                 await bb.clickButton("button", "type='submit'");
                 return true;
             }
@@ -105,6 +136,4 @@ const bookOnDate = async(bb, date) => {
     return false;
 }
 
-    
-
-await main();
+main().catch(console.error);

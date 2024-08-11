@@ -1,8 +1,13 @@
 {
-    "name": "Browser Bot",
+    "name": "Browser_Bot",
     "version": "1.0.0",
     "type": "module",
-  "dependencies": {
-    "puppeteer": "^22.12.1"
-  }
+    "dependencies": {
+        "fs": "^0.0.1-security",
+        "js": "^0.1.0",
+        "puppeteer": "^22.12.1"
+    },
+    "bin":{
+        "execute": "index.js"
+    }
 }
