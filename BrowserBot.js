@@ -1,16 +1,82 @@
 import puppeteer from 'puppeteer';
 
+
 class BrowserBot{
-    constructor(randomizeTime = false, min = 1000, max = 2000){
-        this.randomizeTime = randomizeTime
-        this.min = min;
-        this.max = max;
+    constructor(){
+        this.page = null;
+        this.recorder = null;
+    }
+
+    delay(ms = 1000){
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    randomInRange(min, max){
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    async initBrowser(headless = false, args = ['--no-sandbox', '--disable-setuid-sandbox']){
+        const browser = await puppeteer.launch({headless,args});
+        this.page = await browser.newPage();
+    }
+
+    async closeBrowser(){
+        await this.page.close();
+        await this.page.browser().close();
+    }
+
+    async waitForLoad(){
+        await this.page.waitForNavigation({ waitUntil: 'load' });
+    }
+
+    async gotoPage(url){
+        await this.page.goto(url, {waitUntil: 'load', timeout: 0});
+    }
+
+    locate(cssSelector){
+        return this.page.locator(cssSelector).setTimeout(2000);
+    }
+
+    async getAttribute(cssSelector, attribute){
+        try{
+            await this.page.waitForSelector(cssSelector, {timeout: 50});
+            return await this.page.$$eval(cssSelector, elements => 
+                elements.map(element => {
+                    const attrs = {};
+                    for(const attr of element.attributes)
+                        attrs[attr.name] = attr.value;
+                    return attrs;
+                })
+            );
+        }
+        catch(e){
+            return null;
+        }
+    }
+
+    async getInnerText(cssSelector){
+        try{
+            await this.page.waitForSelector(cssSelector, {timeout: 50});
+            return await this.page.$eval(cssSelector, el => el.innerText);
+        }
+        catch(e){
+            return null;
+        }
+    }
+}
+
+
+/*
+
+
+class BrowserBot{
+    constructor(){
         this.page = null;
     }
 
     async initBrowser(){
         const browser = await puppeteer.launch({
-            headless: true,
+            headless: false,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             ignoreDefaultArgs: ['--disable-extensions'],
 
@@ -18,38 +84,30 @@ class BrowserBot{
         this.page = await browser.newPage();
     }
 
-    delay() {
-        let time = this.min
-        if(this.randomizeTime){
-            time = this.randomInRange(this.min, this.max);
-        }
-        return new Promise(
-            (resolve) => setTimeout(resolve, time)
-        );
+    delay(ms = 1000) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     randomInRange(min, max) {  
         return Math.floor(Math.random() * (max - min) + min); 
     }
 
-    async setInput(element, identifier, text){
+    async setInput(element, identifier, text, randomizeTime = false, min = 200, max = 500){
         const el = element + "[" + identifier + "]";
         await this.page.waitForSelector(el);
-        if(!this.randomizeTime){
+        if(!randomizeTime){
             await this.page.type(el, text);
+            return;
         }
-        else{
-            // split input into random parts
-            let i = 0;
-            while(i < text.length){
-                let randomLength = this.randomInRange(1, Math.min(5, text.length - i));
-                let part = text.substring(i, i + randomLength);
-                await this.page.type(el, part);
-                await this.delay(this.randomInRange(this.min/10,this.max/10));
-                i += randomLength;
-            }
+        // split input into random parts
+        let i = 0;
+        while(i < text.length){
+            let randomLength = this.randomInRange(1, Math.min(5, text.length - i));
+            let part = text.substring(i, i + randomLength);
+            await this.page.type(el, part);
+            await this.delay(this.randomInRange(min/10,max/10));
+            i += randomLength;
         }
-        await this.delay();
     }
 
     async gotoPage(url){
@@ -57,11 +115,15 @@ class BrowserBot{
         await this.page.goto(url, {waitUntil: 'load', timeout: 0});
     }
 
-    async clickButton(element, identifier){
+    async clickButton(element, identifier, index = 0){
         const el = element + "[" + identifier + "]";
         await this.page.waitForSelector(el);
-        await this.page.click(el);
-        await this.delay();
+        const buttons = await this.page.$$(el);
+        if(buttons.length <= index){
+            console.log("Button not found");
+            return;
+        }
+        await buttons[index].click();
     }
 
     async getAttribute(element, identifier, attribute, timer = 500){
@@ -102,12 +164,19 @@ class BrowserBot{
         return Promise.race([task, timeout]);
     }
 
+    async waitForSelector(element, identifier){
+        const el = element + "[" + identifier + "]";
+        await this.page.waitForSelector(el);
+    }
+
     async closeBrowser(page){
         await this.page.close();
         await this.page.browser().close();
     }
 
 }
+
+*/
 
 
 export {BrowserBot};
