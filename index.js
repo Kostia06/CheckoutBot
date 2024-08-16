@@ -25,12 +25,12 @@ const daysOfWeek = [
 const info = {
     eventName: "Friday Tennis",
     link: "https://anc.apm.activecommunities.com/santamonicarecreation/reservation/landing/quick?groupId=3",
-    runDays: ["Fri", "Tue", "Thu"],
+    runDays: ["Tue", "Thu"],
     name,
     user,
     password,
     startTime: new Date(0, 0, 0, 8, 15, 0),
-    timeRange: [8, 12],
+    timeRange: [9, 12],
 }
 
 const ask = async(query) => {
@@ -58,7 +58,11 @@ async function main(){
             console.log("Debug mode on");
         if(dayIndex >= info.runDays.length)
             dayIndex = 0;
+        
         const startDay = getNextWeekday(info.runDays[dayIndex++]);
+        startDay.setHours(info.startTime.getHours());
+        startDay.setMinutes(info.startTime.getMinutes());
+
         const lookingFor = new Date(startDay);
         lookingFor.setDate(startDay.getDate() + 3);
 
