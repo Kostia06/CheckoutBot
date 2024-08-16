@@ -8,3 +8,5 @@ if [ -z $EXISTS ]; then
     echo "Installing $CMD"
     brew install $CMD
 fi
+
+npm i 
