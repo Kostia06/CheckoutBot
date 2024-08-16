@@ -1,12 +1,5 @@
 #!/usr/bin/env node
 
-/*
-    9 - 12
-    play it on tuesday and thursday for friday and sunday
-    
-*/
-
-
 import { BrowserBot } from "./BrowserBot.js";
 import { waitUntil } from "./Timer.js"
 import {user, name, password} from "./password.js"
@@ -28,7 +21,6 @@ const months = [
 const daysOfWeek = [
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 ];
-
 
 const info = {
     eventName: "Friday Tennis",
